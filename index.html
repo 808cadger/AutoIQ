@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#080808">
+  <title>Auto IQ</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg:     #080808;
+      --gold:   #FFB800;
+      --steel:  #4A9EF5;
+      --card:   rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.10);
+      --text:   #ffffff;
+      --muted:  rgba(255,255,255,0.55);
+    }
+
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--bg);
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: var(--text); position: fixed; inset: 0;
+    }
+
+    /* ═══════════════════════════════════
+       SCREENS
+    ═══════════════════════════════════ */
+    .screen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; }
+    .screen.active { display: flex; }
+
+    /* ── Splash ── */
+    #splash { background: radial-gradient(ellipse at 40% 45%, rgba(255,184,0,0.09) 0%, transparent 65%), #080808; }
+    .splash-logo {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 58px; font-weight: 900; letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #FFB800 0%, #FFDF72 40%, #4A9EF5 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      animation: fadeUp 0.9s ease both;
+    }
+    .splash-sub {
+      font-size: 11.5px; letter-spacing: 0.3em; text-transform: uppercase;
+      color: rgba(255,255,255,0.32); margin-top: 13px;
+      animation: fadeUp 0.9s 0.22s ease both;
+    }
+    .splash-tagline {
+      font-size: 14px; color: rgba(255,255,255,0.18); margin-top: 8px;
+      font-style: italic; letter-spacing: 0.03em;
+      animation: fadeUp 0.9s 0.38s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    /* ── Intake (main) ── */
+    #intake {
+      background: var(--bg);
+      flex-direction: column;
+      justify-content: flex-start;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding-bottom: 90px;
+    }
+
+    /* ── Vehicle form ── */
+    .vehicle-form-wrap {
+      width: 100%; background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+    .vehicle-form-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; cursor: pointer; user-select: none;
+    }
+    .vehicle-form-title {
+      font-size: 13px; font-weight: 600; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--gold);
+    }
+    #vehicle-chevron {
+      font-size: 16px; color: var(--muted);
+      transition: transform 0.24s cubic-bezier(0.4,0,0.2,1);
+      transform: rotate(180deg);
+    }
+    #vehicle-form-body {
+      max-height: 320px; overflow: hidden;
+      transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1);
+      padding: 0 20px 16px;
+    }
+    .vehicle-row { display: flex; gap: 10px; margin-bottom: 9px; }
+    .vehicle-field-wrap { flex: 1; min-width: 0; }
+    .vfield-label {
+      font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 4px; font-weight: 600;
+    }
+    .vehicle-field {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      background: rgba(255,255,255,0.07); border: 1px solid var(--border);
+      color: #fff; font-size: 14.5px; font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color 0.18s;
+    }
+    .vehicle-field::placeholder { color: rgba(255,255,255,0.25); }
+    .vehicle-field:focus { border-color: var(--gold); }
+
+    /* ── Photo zones ── */
+    .photo-zones-wrap {
+      width: 100%; display: flex; gap: 13px; padding: 18px 18px 12px;
+    }
+    .photo-zone-outer {
+      flex: 1; aspect-ratio: 1 / 1;
+      border-radius: 18px; overflow: hidden; position: relative;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px dashed rgba(255,255,255,0.18);
+      cursor: pointer;
+      transition: border-color 0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    .photo-zone-outer:active { border-color: var(--gold); }
+    .photo-placeholder {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px; pointer-events: none;
+    }
+    .photo-placeholder-icon  { font-size: 32px; }
+    .photo-placeholder-label {
+      font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.28); font-weight: 600;
+    }
+    .photo-slot-num {
+      position: absolute; top: 9px; left: 11px;
+      font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.28); text-transform: uppercase; pointer-events: none;
+    }
+    .photo-preview {
+      width: 100%; height: 100%; object-fit: cover;
+      display: none;
+    }
+    .photo-clear-btn {
+      display: none; position: absolute; top: 8px; right: 8px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      border: none; color: #fff; font-size: 13px;
+      padding: 4px 10px; border-radius: 14px; cursor: pointer;
+      letter-spacing: 0.02em;
+    }
+    .photo-video {
+      display: none; width: 100%; height: 100%; object-fit: cover;
+    }
+    .cam-capture-btn {
+      display: none; position: absolute; bottom: 11px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.18); backdrop-filter: blur(8px);
+      border: 1.5px solid rgba(255,255,255,0.35); color: #fff;
+      font-size: 12px; padding: 7px 18px; border-radius: 22px;
+      cursor: pointer; letter-spacing: 0.03em; white-space: nowrap;
+    }
+    .cam-cancel-btn {
+      display: none; position: absolute; top: 8px; right: 8px;
+      background: rgba(0,0,0,0.45); border: none; color: #fff;
+      font-size: 16px; width: 28px; height: 28px; border-radius: 50%;
+      cursor: pointer; line-height: 28px; text-align: center;
+    }
+
+    /* ── Hint row ── */
+    .intake-hint {
+      font-size: 11.5px; color: rgba(255,255,255,0.2);
+      text-align: center; padding: 0 28px 8px;
+      letter-spacing: 0.04em; line-height: 1.6;
+    }
+
+    /* ═══════════════════════════════════
+       ANALYZING SCREEN
+    ═══════════════════════════════════ */
+    #analyzing {
+      background: radial-gradient(ellipse at 50% 40%, rgba(255,184,0,0.06) 0%, transparent 60%), var(--bg);
+    }
+    .ana-icon-wrap {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: rgba(255,184,0,0.1); border: 1px solid rgba(255,184,0,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px;
+      box-shadow: 0 0 48px rgba(255,184,0,0.2), inset 0 0 24px rgba(255,184,0,0.08);
+      animation: pulseGlow 2.1s ease-in-out infinite;
+    }
+    @keyframes pulseGlow {
+      0%,100% { box-shadow: 0 0 48px rgba(255,184,0,0.2), inset 0 0 24px rgba(255,184,0,0.08); }
+      50%      { box-shadow: 0 0 72px rgba(255,184,0,0.38), inset 0 0 36px rgba(255,184,0,0.16); }
+    }
+    .ana-title {
+      font-family: 'Playfair Display', serif; font-size: 22px; color: #fff;
+      margin-top: 22px; letter-spacing: -0.01em;
+    }
+    .ana-sub { font-size: 11.5px; color: var(--muted); letter-spacing: 0.16em; text-transform: uppercase; margin-top: 6px; }
+    #ana-step-label {
+      font-size: 14px; color: var(--gold); font-weight: 600;
+      margin-top: 18px; min-height: 24px;
+      transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* Pipeline step dots */
+    .pipeline-steps {
+      display: flex; gap: 12px; margin-top: 22px; align-items: center;
+    }
+    .pipeline-step {
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+    }
+    .step-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .pipeline-step.active .step-dot {
+      background: var(--gold);
+      box-shadow: 0 0 10px rgba(255,184,0,0.7);
+      transform: scale(1.3);
+    }
+    .pipeline-step.done .step-dot {
+      background: rgba(74,158,245,0.7);
+    }
+    .step-label {
+      font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.22); font-weight: 600;
+    }
+    .pipeline-step.active .step-label { color: var(--gold); }
+    .pipeline-step.done   .step-label { color: rgba(74,158,245,0.7); }
+
+    /* connector lines */
+    .step-connector {
+      width: 20px; height: 1px;
+      background: rgba(255,255,255,0.1);
+      margin-bottom: 14px; flex-shrink: 0;
+    }
+
+    /* ═══════════════════════════════════
+       FLOATING DRAGGABLE ICONS
+    ═══════════════════════════════════ */
+    .float-icon {
+      position: fixed;
+      width: 56px; height: 56px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 4px 22px rgba(0,0,0,0.52), 0 1px 0 rgba(255,255,255,0.07) inset;
+      cursor: pointer; z-index: 500;
+      touch-action: none; user-select: none;
+    }
+    .float-icon.gold {
+      background: linear-gradient(135deg, rgba(255,184,0,0.88), rgba(255,154,0,0.88));
+      border-color: rgba(255,184,0,0.4);
+      box-shadow: 0 4px 28px rgba(255,184,0,0.52);
+    }
+    #float-analyze {
+      width: 72px; height: 72px; font-size: 30px; display: none;
+    }
+    #float-analyze.show { display: flex; }
+
+    /* ═══════════════════════════════════
+       BOTTOM SHEETS
+    ═══════════════════════════════════ */
+    #sheet-overlay {
+      position: fixed; inset: 0; z-index: 800;
+      background: rgba(0,0,0,0.62); backdrop-filter: blur(6px);
+      display: none;
+    }
+    #sheet-overlay.open { display: block; }
+
+    .sheet {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 900;
+      border-radius: 28px 28px 0 0;
+      background: #111316; color: #fff;
+      max-height: 90vh; overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.36s cubic-bezier(0.32,0.72,0,1);
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .sheet.open { transform: translateY(0); }
+    .sheet-handle { width: 38px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.15); margin: 14px auto 0; }
+    .sheet-title  { padding: 18px 24px 6px; font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #fff; }
+    .sheet-body   { padding: 10px 24px 52px; }
+
+    /* ── Settings sheet ── */
+    .field-lbl   { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 7px; }
+    .field-input {
+      width: 100%; padding: 13px 15px; border-radius: 12px;
+      border: 1.5px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05); font-size: 15px; color: #fff;
+      outline: none; font-family: monospace; transition: border-color 0.18s;
+    }
+    .field-input::placeholder { color: rgba(255,255,255,0.22); }
+    .field-input:focus { border-color: var(--gold); }
+    .btn-save {
+      width: 100%; padding: 15px; border-radius: 14px; border: none; margin-top: 13px;
+      background: linear-gradient(135deg, #FFB800, #FF9A00);
+      color: #080808; font-size: 15px; font-weight: 800;
+      box-shadow: 0 4px 20px rgba(255,184,0,0.4); cursor: pointer;
+      letter-spacing: 0.03em;
+    }
+    .btn-ghost {
+      width: 100%; padding: 13px; border-radius: 12px;
+      border: 1.5px solid rgba(255,255,255,0.12); background: transparent;
+      color: rgba(255,255,255,0.35); font-size: 13px; cursor: pointer; margin-top: 10px;
+    }
+    .btn-demo {
+      width: 100%; padding: 13px; border-radius: 12px;
+      border: 1.5px solid var(--gold); background: transparent;
+      color: var(--gold); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 10px;
+      transition: all 0.2s;
+    }
+    .btn-demo.on { background: linear-gradient(135deg, #FFB800, #FF9A00); color: #080808; border-color: transparent; }
+
+    /* ── Results sheet ── */
+    .score-wrap { display: flex; flex-direction: column; align-items: center; padding: 12px 0 4px; }
+    .score-label {
+      font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--muted); margin-top: 6px; font-weight: 700;
+    }
+
+    .vehicle-badge {
+      display: inline-block; margin: 8px auto;
+      background: rgba(74,158,245,0.15); color: var(--steel);
+      border: 1px solid rgba(74,158,245,0.3);
+      border-radius: 50px; padding: 5px 16px;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* Human review banner */
+    #human-review-banner {
+      display: none; align-items: flex-start; gap: 11px;
+      background: rgba(255,184,0,0.1); border: 1px solid rgba(255,184,0,0.3);
+      border-radius: 12px; padding: 12px 15px; margin: 12px 0;
+    }
+    .review-icon { font-size: 20px; flex-shrink: 0; }
+    .review-text { flex: 1; }
+    .review-title { font-size: 13px; font-weight: 700; color: var(--gold); margin-bottom: 3px; }
+    #review-reasons { font-size: 12px; color: rgba(255,184,0,0.7); line-height: 1.5; }
+
+    /* Damage summary row */
+    .damage-summary-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .damage-info { flex: 1; }
+    .damage-part-name {
+      font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 3px;
+    }
+    .damage-type-text {
+      font-size: 13px; color: var(--muted); text-transform: capitalize;
+    }
+    .severity-badge {
+      padding: 5px 13px; border-radius: 50px;
+      font-size: 12px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .sev-minor    { background: rgba(72,199,142,0.18); color: #48C78E; border: 1px solid rgba(72,199,142,0.3); }
+    .sev-moderate { background: rgba(255,184,0,0.18);  color: var(--gold); border: 1px solid rgba(255,184,0,0.3); }
+    .sev-severe   { background: rgba(255,80,80,0.18);  color: #FF5050; border: 1px solid rgba(255,80,80,0.3); }
+    .sev-unknown  { background: rgba(255,255,255,0.08); color: var(--muted); border: 1px solid var(--border); }
+
+    .result-summary {
+      font-size: 13.5px; line-height: 1.75; color: rgba(255,255,255,0.68);
+      text-align: center; margin: 12px 0 16px;
+    }
+
+    .sec-title {
+      font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700;
+      color: #fff; margin: 20px 0 10px;
+    }
+
+    /* Price breakdown card */
+    .price-card {
+      background: var(--card); border-radius: 16px;
+      border: 1px solid var(--border); overflow: hidden;
+    }
+    .price-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .price-row:last-child { border-bottom: none; }
+    .price-row.total-row {
+      background: rgba(255,184,0,0.07); border-top: 1px solid rgba(255,184,0,0.15);
+    }
+    .price-label {
+      font-size: 13px; color: rgba(255,255,255,0.65); font-weight: 500;
+    }
+    .price-label-sub { font-size: 11px; color: rgba(255,255,255,0.32); margin-top: 1px; }
+    .price-row.total-row .price-label { color: var(--gold); font-weight: 700; font-size: 14px; }
+    .price-range {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .price-lo  { font-size: 11px; color: rgba(255,255,255,0.38); }
+    .price-mid { font-size: 15px; font-weight: 800; color: #fff; }
+    .price-row.total-row .price-mid { color: var(--gold); font-size: 18px; }
+    .price-hi  { font-size: 11px; color: rgba(255,255,255,0.38); }
+
+    /* Parts list */
+    .parts-row {
+      padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .parts-row:last-child { border-bottom: none; }
+    .parts-row-name { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 5px; }
+    .parts-row-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .action-badge {
+      padding: 3px 9px; border-radius: 6px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .action-replace  { background: rgba(255,80,80,0.18); color: #FF7070; }
+    .action-repair   { background: rgba(255,184,0,0.18); color: var(--gold); }
+    .action-refinish { background: rgba(74,158,245,0.18); color: var(--steel); }
+    .action-blend    { background: rgba(72,199,142,0.15); color: #48C78E; }
+    .source-label { font-size: 11px; color: rgba(255,255,255,0.35); font-weight: 500; }
+    .parts-note   { font-size: 11px; color: rgba(255,255,255,0.28); font-style: italic; }
+
+    /* Warnings */
+    #results-warnings { margin: 12px 0; display: none; }
+    .warn-item {
+      background: rgba(255,80,80,0.08); border: 1px solid rgba(255,80,80,0.2);
+      border-radius: 9px; padding: 9px 12px; font-size: 12.5px;
+      color: rgba(255,140,140,0.85); margin-bottom: 6px; line-height: 1.5;
+    }
+
+    /* Disclaimer */
+    .disclaimer-text {
+      font-size: 11.5px; color: rgba(255,255,255,0.28); line-height: 1.65;
+      border-top: 1px solid rgba(255,255,255,0.07); padding-top: 14px; margin-top: 18px;
+      font-style: italic;
+    }
+
+    /* Error banner */
+    .err-banner {
+      background: rgba(255,50,50,0.1); border: 1px solid rgba(255,50,50,0.3);
+      color: #ff9090; border-radius: 10px; padding: 11px 14px;
+      font-size: 13px; line-height: 1.5; margin-bottom: 12px;
+    }
+    .err-banner.hidden { display: none; }
+
+    /* Result action buttons */
+    .result-actions { display: flex; gap: 10px; margin-top: 22px; }
+    .btn-gold {
+      flex: 1; padding: 14px; border-radius: 14px; border: none;
+      background: linear-gradient(135deg, #FFB800, #FF9A00);
+      color: #080808; font-size: 14px; font-weight: 800;
+      box-shadow: 0 4px 18px rgba(255,184,0,0.38); cursor: pointer;
+      letter-spacing: 0.02em;
+    }
+    .btn-outline-gold {
+      flex: 1; padding: 14px; border-radius: 14px;
+      border: 1.5px solid rgba(255,184,0,0.4); background: transparent;
+      color: var(--gold); font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .btn-outline-steel {
+      flex: 1; padding: 14px; border-radius: 14px;
+      border: 1.5px solid rgba(74,158,245,0.4); background: transparent;
+      color: var(--steel); font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+
+    /* ── History sheet ── */
+    .hist-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.07); cursor: pointer;
+    }
+    .hist-thumb       { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: rgba(255,255,255,0.06); }
+    .hist-placeholder { width: 56px; height: 56px; border-radius: 12px; background: linear-gradient(135deg, rgba(255,184,0,0.3), rgba(74,158,245,0.3)); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+    .hist-vehicle { font-size: 14px; font-weight: 700; color: #fff; }
+    .hist-part    { font-size: 12px; color: var(--muted); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 170px; }
+    .hist-date    { font-size: 11px; color: rgba(255,255,255,0.28); margin-top: 3px; }
+    .hist-total   { font-size: 18px; font-weight: 800; color: var(--gold); margin-left: auto; flex-shrink: 0; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 90px; left: 50%;
+      transform: translateX(-50%) translateY(18px);
+      background: rgba(18,18,18,0.96); color: #fff;
+      padding: 10px 22px; border-radius: 50px;
+      font-size: 13px; font-weight: 500;
+      opacity: 0; transition: all 0.28s; z-index: 9999;
+      white-space: nowrap; pointer-events: none;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Scrollbar (dark themed) */
+    ::-webkit-scrollbar       { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- ════ SPLASH ════ -->
+<div id="splash" class="screen active">
+  <div class="splash-logo">Auto IQ</div>
+  <div class="splash-sub">Vehicle Repair Estimation</div>
+  <div class="splash-tagline">Damage detected. Estimate delivered.</div>
+</div>
+
+<!-- ════ INTAKE (main) ════ -->
+<div id="intake" class="screen">
+
+  <!-- Vehicle form — collapsible -->
+  <div class="vehicle-form-wrap">
+    <div class="vehicle-form-header" id="vehicle-form-header">
+      <div class="vehicle-form-title">Vehicle Info</div>
+      <div id="vehicle-chevron">▾</div>
+    </div>
+    <div id="vehicle-form-body">
+      <div class="vehicle-row">
+        <div class="vehicle-field-wrap" style="flex:0 0 78px">
+          <div class="vfield-label">Year</div>
+          <input class="vehicle-field" id="vehicle-year" type="number" placeholder="2019" min="1990" max="2030" inputmode="numeric">
+        </div>
+        <div class="vehicle-field-wrap">
+          <div class="vfield-label">Make</div>
+          <input class="vehicle-field" id="vehicle-make" type="text" placeholder="Toyota">
+        </div>
+        <div class="vehicle-field-wrap">
+          <div class="vfield-label">Model</div>
+          <input class="vehicle-field" id="vehicle-model" type="text" placeholder="Camry">
+        </div>
+      </div>
+      <div class="vehicle-row">
+        <div class="vehicle-field-wrap">
+          <div class="vfield-label">Trim</div>
+          <input class="vehicle-field" id="vehicle-trim" type="text" placeholder="SE (optional)">
+        </div>
+        <div class="vehicle-field-wrap" style="flex:0 0 120px">
+          <div class="vfield-label">Mileage</div>
+          <input class="vehicle-field" id="vehicle-mileage" type="number" placeholder="45000" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo zones — 2 slots -->
+  <div class="photo-zones-wrap">
+
+    <!-- Slot 0 -->
+    <div class="photo-zone-outer" id="photo-zone-0" onclick="autoIntake.tapPhotoZone(0)">
+      <div class="photo-slot-num">Photo 1</div>
+      <div class="photo-placeholder" id="photo-placeholder-0">
+        <div class="photo-placeholder-icon">📷</div>
+        <div class="photo-placeholder-label">Tap to add</div>
+      </div>
+      <video class="photo-video" id="photo-video-0" autoplay playsinline muted></video>
+      <canvas id="photo-canvas-0" style="display:none"></canvas>
+      <img  class="photo-preview" id="photo-preview-0" src="" alt="Photo 1">
+      <button class="cam-capture-btn" id="cam-capture-0"
+        onclick="event.stopPropagation(); autoIntake.captureVideo(0)">Capture</button>
+      <button class="cam-cancel-btn"  id="cam-cancel-0"
+        onclick="event.stopPropagation(); autoIntake.stopCamera(0)">✕</button>
+      <button class="photo-clear-btn" id="photo-clear-0"
+        onclick="event.stopPropagation(); autoIntake.clearPhoto(0)">← Retake</button>
+    </div>
+
+    <!-- Slot 1 -->
+    <div class="photo-zone-outer" id="photo-zone-1" onclick="autoIntake.tapPhotoZone(1)">
+      <div class="photo-slot-num">Photo 2</div>
+      <div class="photo-placeholder" id="photo-placeholder-1">
+        <div class="photo-placeholder-icon">📷</div>
+        <div class="photo-placeholder-label">Optional</div>
+      </div>
+      <video class="photo-video" id="photo-video-1" autoplay playsinline muted></video>
+      <canvas id="photo-canvas-1" style="display:none"></canvas>
+      <img  class="photo-preview" id="photo-preview-1" src="" alt="Photo 2">
+      <button class="cam-capture-btn" id="cam-capture-1"
+        onclick="event.stopPropagation(); autoIntake.captureVideo(1)">Capture</button>
+      <button class="cam-cancel-btn"  id="cam-cancel-1"
+        onclick="event.stopPropagation(); autoIntake.stopCamera(1)">✕</button>
+      <button class="photo-clear-btn" id="photo-clear-1"
+        onclick="event.stopPropagation(); autoIntake.clearPhoto(1)">← Retake</button>
+    </div>
+  </div>
+
+  <!-- Hidden file inputs -->
+  <input type="file" id="photo-file-0" accept="image/*" capture="environment" style="display:none"
+    onchange="autoIntake.onFileChange(event, 0)">
+  <input type="file" id="photo-file-1" accept="image/*" capture="environment" style="display:none"
+    onchange="autoIntake.onFileChange(event, 1)">
+
+  <div class="intake-hint">Add 1–2 damage photos · Enter vehicle year, make &amp; model · Tap ✨ to analyze</div>
+
+  <!-- Floating icons -->
+  <div class="float-icon"      id="float-camera"   data-key="float-camera">📷</div>
+  <div class="float-icon"      id="float-settings" data-key="float-settings">⚙️</div>
+  <div class="float-icon"      id="float-history"  data-key="float-history">📋</div>
+  <div class="float-icon"      id="float-upload"   data-key="float-upload">🖼</div>
+  <div class="float-icon gold" id="float-analyze"  data-key="float-analyze">✨</div>
+
+</div>
+
+<!-- ════ ANALYZING ════ -->
+<div id="analyzing" class="screen">
+  <div class="ana-icon-wrap">🔍</div>
+  <div class="ana-title">Analyzing damage...</div>
+  <div class="ana-sub">Powered by Claude AI</div>
+  <div id="ana-step-label">🚗 Intake…</div>
+
+  <!-- Pipeline progress dots -->
+  <div class="pipeline-steps">
+    <div class="pipeline-step active" id="step-intake">
+      <div class="step-dot"></div>
+      <div class="step-label">Intake</div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="pipeline-step" id="step-vision">
+      <div class="step-dot"></div>
+      <div class="step-label">Vision</div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="pipeline-step" id="step-parts">
+      <div class="step-dot"></div>
+      <div class="step-label">Parts</div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="pipeline-step" id="step-pricing">
+      <div class="step-dot"></div>
+      <div class="step-label">Pricing</div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="pipeline-step" id="step-decision">
+      <div class="step-dot"></div>
+      <div class="step-label">Decision</div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet overlay -->
+<div id="sheet-overlay" onclick="closeAllSheets()"></div>
+
+<!-- ════ RESULTS SHEET ════ -->
+<div id="results-sheet" class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Repair Estimate</div>
+  <div class="sheet-body">
+
+    <div id="results-error" class="err-banner hidden"></div>
+
+    <!-- Confidence ring -->
+    <div class="score-wrap">
+      <svg width="130" height="130" viewBox="0 0 144 144">
+        <circle cx="72" cy="72" r="60" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>
+        <circle cx="72" cy="72" r="60" fill="none" stroke="url(#cGrad)" stroke-width="10"
+          stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="377"
+          transform="rotate(-90 72 72)" id="confidence-arc"
+          style="transition:stroke-dashoffset 1.2s cubic-bezier(0.34,1.2,0.64,1)"/>
+        <defs>
+          <linearGradient id="cGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#FFB800"/>
+            <stop offset="100%" stop-color="#FFDF72"/>
+          </linearGradient>
+        </defs>
+        <text x="72" y="67" text-anchor="middle" fill="#fff" font-size="34" font-weight="800"
+          font-family="Inter,sans-serif" id="confidence-num">—</text>
+        <text x="72" y="86" text-anchor="middle" fill="rgba(255,255,255,0.35)"
+          font-size="11" font-family="Inter,sans-serif">/ 100</text>
+      </svg>
+      <div class="score-label">Confidence Score</div>
+    </div>
+
+    <!-- Vehicle badge -->
+    <div style="text-align:center">
+      <span id="results-vehicle-badge" class="vehicle-badge"></span>
+    </div>
+
+    <!-- Human review banner -->
+    <div id="human-review-banner">
+      <div class="review-icon">⚠️</div>
+      <div class="review-text">
+        <div class="review-title">Human Review Recommended</div>
+        <div id="review-reasons"></div>
+      </div>
+    </div>
+
+    <!-- Damage summary -->
+    <div class="damage-summary-row">
+      <div class="damage-info">
+        <div class="damage-part-name" id="results-part">—</div>
+        <div class="damage-type-text" id="results-damage-type">—</div>
+      </div>
+      <div class="severity-badge sev-unknown" id="results-severity">—</div>
+    </div>
+
+    <!-- Executive summary -->
+    <div id="results-summary" class="result-summary"></div>
+
+    <!-- Repair line items -->
+    <div class="sec-title">Repair Line Items</div>
+    <div id="results-parts-list" style="margin-bottom:4px"></div>
+
+    <!-- Price breakdown -->
+    <div class="sec-title">Cost Estimate</div>
+    <div class="price-card">
+      <div class="price-row">
+        <div>
+          <div class="price-label">Parts</div>
+        </div>
+        <div class="price-range">
+          <div class="price-lo"  id="price-parts-low">—</div>
+          <div class="price-mid" id="price-parts-mid">—</div>
+          <div class="price-hi"  id="price-parts-high">—</div>
+        </div>
+      </div>
+      <div class="price-row">
+        <div>
+          <div class="price-label">Labor</div>
+          <div class="price-label-sub" id="price-labor-hours"></div>
+        </div>
+        <div class="price-range">
+          <div class="price-lo"  id="price-labor-low">—</div>
+          <div class="price-mid" id="price-labor-mid">—</div>
+          <div class="price-hi"  id="price-labor-high">—</div>
+        </div>
+      </div>
+      <div class="price-row">
+        <div>
+          <div class="price-label">Paint &amp; Materials</div>
+        </div>
+        <div class="price-range">
+          <div class="price-lo"  id="price-paint-low">—</div>
+          <div class="price-mid" id="price-paint-mid">—</div>
+          <div class="price-hi"  id="price-paint-high">—</div>
+        </div>
+      </div>
+      <div class="price-row total-row">
+        <div>
+          <div class="price-label">Total Estimate</div>
+        </div>
+        <div class="price-range">
+          <div class="price-lo"  id="price-total-low">—</div>
+          <div class="price-mid" id="price-total-mid">—</div>
+          <div class="price-hi"  id="price-total-high">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Warnings -->
+    <div id="results-warnings"></div>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer-text" id="results-disclaimer">
+      Preliminary estimate only. Visible damage assessed from photos. Hidden or mechanical damage requires physical inspection.
+    </div>
+
+    <!-- Action buttons -->
+    <div class="result-actions">
+      <button class="btn-gold"          onclick="autoApp.saveEstimate()">Save ✓</button>
+      <button class="btn-outline-steel" onclick="autoApp.exportEstimate()">Export JSON</button>
+    </div>
+    <div style="margin-top:10px">
+      <button class="btn-ghost" onclick="autoApp.newEstimate(); closeAllSheets()">New Estimate</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SETTINGS SHEET ════ -->
+<div id="settings-sheet" class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Settings</div>
+  <div class="sheet-body">
+    <div class="field-lbl">Anthropic API Key</div>
+    <input class="field-input" id="settings-apikey" type="password" placeholder="sk-ant-..."
+      onblur="autoApp.saveSettings(true)"
+      onkeydown="if(event.key==='Enter') autoApp.saveSettings()">
+    <button class="btn-save" onclick="autoApp.saveSettings()">Save Key</button>
+    <div style="height:20px"></div>
+    <div class="field-lbl">Demo Mode</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.38);margin-bottom:5px">Preview without an API key</div>
+    <button class="btn-demo" id="btn-demo" onclick="autoApp.toggleDemo()">Enable Demo Mode</button>
+    <button class="btn-ghost" onclick="autoApp.resetApp()">Reset All Data</button>
+  </div>
+</div>
+
+<!-- ════ HISTORY SHEET ════ -->
+<div id="history-sheet" class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Estimate History</div>
+  <div class="sheet-body">
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Load order matters: api-client → prompts → agents → pipeline → intake → app -->
+<!-- PWA service worker registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('[AutoIQ] SW registered', reg.scope))
+        .catch(err => console.warn('[AutoIQ] SW registration failed', err))
+    })
+  }
+</script>
+<script src="api-client.js"></script>
+<script src="prompts/visionPrompt.js"></script>
+<script src="prompts/partsMapPrompt.js"></script>
+<script src="prompts/pricingPrompt.js"></script>
+<script src="prompts/decisionPrompt.js"></script>
+<script src="agents/visionAgent.js"></script>
+<script src="agents/partsMapAgent.js"></script>
+<script src="agents/pricingAgent.js"></script>
+<script src="agents/decisionAgent.js"></script>
+<script src="pipeline.js"></script>
+<script src="intake.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

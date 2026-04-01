@@ -1,0 +1,15 @@
+node_modules/
+dist-electron/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/build/
+www/
+backend/__pycache__/
+backend/*.egg-info/
+backend/.venv/
+backend/uploads/
+backend/autoiq.db
+.env
+*.apk
+*.aab

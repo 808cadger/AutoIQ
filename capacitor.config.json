@@ -1,0 +1,14 @@
+{
+  "appId": "com.autoiq.vehiclerepair",
+  "appName": "Auto IQ",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "Camera": {
+      "presentationStyle": "fullscreen"
+    }
+  }
+}

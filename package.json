@@ -1,0 +1,76 @@
+{
+  "name": "autoiq",
+  "version": "1.0.0",
+  "description": "Auto IQ — AI Vehicle Damage Assessment and Repair Estimation powered by Claude Vision",
+  "main": "electron/main.js",
+  "author": "Christopher Cadger <cadger808@codeberg.org>",
+  "license": "UNLICENSED",
+  "scripts": {
+    "electron":       "electron .",
+    "electron:dev":   "NODE_ENV=development electron .",
+    "electron:build": "electron-builder --linux",
+    "electron:dist":  "electron-builder --linux AppImage rpm",
+    "cap:sync":       "npx cap copy && npx cap sync",
+    "cap:android":    "npm run cap:sync && npx cap open android",
+    "serve":          "python3 -m http.server 8080"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/camera":  "^8.0.1",
+    "@capacitor/cli":     "^8.1.0",
+    "@capacitor/core":    "^8.1.0",
+    "electron-store":     "^8.2.0",
+    "electron-updater":   "^6.8.3"
+  },
+  "devDependencies": {
+    "electron":         "^35.7.5",
+    "electron-builder": "^26.8.2",
+    "typescript":       "^5.9.3"
+  },
+  "overrides": {
+    "minimatch":      ">=10.2.3",
+    "tar":            ">=7.5.11",
+    "picomatch":      ">=4.0.2",
+    "brace-expansion": ">=2.0.1"
+  },
+  "build": {
+    "appId":       "com.autoiq.vehiclerepair",
+    "productName": "Auto IQ",
+    "copyright":   "Copyright © 2025 Christopher Cadger",
+    "directories": {
+      "output":         "dist-electron",
+      "buildResources": "icons"
+    },
+    "files": [
+      "index.html",
+      "api-client.js",
+      "app.js",
+      "intake.js",
+      "pipeline.js",
+      "agents/**",
+      "prompts/**",
+      "sw.js",
+      "manifest.json",
+      "icons/**",
+      "electron/**",
+      "!node_modules/**",
+      "!android/**",
+      "!backend/**",
+      "!dist-electron/**"
+    ],
+    "linux": {
+      "target":   ["AppImage", "rpm"],
+      "category": "Utility",
+      "icon":     "icons/icon-512.png",
+      "desktop": {
+        "Name":       "Auto IQ",
+        "Comment":    "AI Vehicle Repair Estimation",
+        "Categories": "Utility;Automotive"
+      }
+    },
+    "publish": {
+      "provider": "generic",
+      "url":      "https://codeberg.org/cadger808/autoiq/releases/download/latest/"
+    }
+  }
+}
