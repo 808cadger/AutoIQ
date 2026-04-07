@@ -71,10 +71,20 @@
     .vehicle-form-wrap {
       width: 100%; background: var(--card);
       border-bottom: 1px solid var(--border);
+      border-radius: 0 0 16px 16px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.3);
+      margin-bottom: 4px;
     }
     .vehicle-form-header {
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex; align-items: center; gap: 8px;
       padding: 14px 20px; cursor: pointer; user-select: none;
+    }
+    #vehicle-summary {
+      flex: 1; font-size: 12px; color: var(--muted);
+      font-weight: 500; letter-spacing: 0.02em;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      text-align: right; padding-right: 4px;
+      display: none; /* JS toggles to block when collapsed */
     }
     .vehicle-form-title {
       font-size: 13px; font-weight: 600; letter-spacing: 0.07em;
@@ -560,6 +570,41 @@
 <!-- ════ INTAKE (main) ════ -->
 <div id="intake" class="screen">
 
+  <!-- Vehicle info — header card, open by default, collapses to one-line summary -->
+  <div class="vehicle-form-wrap">
+    <div class="vehicle-form-header" id="vehicle-form-header">
+      <div class="vehicle-form-title">Vehicle Info</div>
+      <div id="vehicle-summary"></div>
+      <div id="vehicle-chevron" style="transform:rotate(180deg)">▾</div>
+    </div>
+    <div id="vehicle-form-body" style="max-height:320px;overflow:hidden;">
+      <div class="vehicle-row">
+        <div class="vehicle-field-wrap" style="flex:0 0 78px">
+          <div class="vfield-label">Year</div>
+          <input class="vehicle-field" id="vehicle-year" type="number" placeholder="2019" min="1990" max="2030" inputmode="numeric">
+        </div>
+        <div class="vehicle-field-wrap">
+          <div class="vfield-label">Make</div>
+          <input class="vehicle-field" id="vehicle-make" type="text" placeholder="Toyota">
+        </div>
+        <div class="vehicle-field-wrap">
+          <div class="vfield-label">Model</div>
+          <input class="vehicle-field" id="vehicle-model" type="text" placeholder="Camry">
+        </div>
+      </div>
+      <div class="vehicle-row">
+        <div class="vehicle-field-wrap">
+          <div class="vfield-label">Trim</div>
+          <input class="vehicle-field" id="vehicle-trim" type="text" placeholder="SE (optional)">
+        </div>
+        <div class="vehicle-field-wrap" style="flex:0 0 120px">
+          <div class="vfield-label">Mileage</div>
+          <input class="vehicle-field" id="vehicle-mileage" type="number" placeholder="45000" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Photo zones — slot 0 is the Part Identifier hero -->
   <div class="photo-zones-wrap">
 
@@ -613,40 +658,6 @@
       <span id="parts-clear-link" onclick="partIdentifier.clearAll()">Clear all</span>
     </div>
     <div id="parts-identified-list"></div>
-  </div>
-
-  <!-- Vehicle form — collapsible, below camera -->
-  <div class="vehicle-form-wrap">
-    <div class="vehicle-form-header" id="vehicle-form-header">
-      <div class="vehicle-form-title">Vehicle Info</div>
-      <div id="vehicle-chevron" style="transform:rotate(0deg)">▾</div>
-    </div>
-    <div id="vehicle-form-body" style="max-height:0px;overflow:hidden;">
-      <div class="vehicle-row">
-        <div class="vehicle-field-wrap" style="flex:0 0 78px">
-          <div class="vfield-label">Year</div>
-          <input class="vehicle-field" id="vehicle-year" type="number" placeholder="2019" min="1990" max="2030" inputmode="numeric">
-        </div>
-        <div class="vehicle-field-wrap">
-          <div class="vfield-label">Make</div>
-          <input class="vehicle-field" id="vehicle-make" type="text" placeholder="Toyota">
-        </div>
-        <div class="vehicle-field-wrap">
-          <div class="vfield-label">Model</div>
-          <input class="vehicle-field" id="vehicle-model" type="text" placeholder="Camry">
-        </div>
-      </div>
-      <div class="vehicle-row">
-        <div class="vehicle-field-wrap">
-          <div class="vfield-label">Trim</div>
-          <input class="vehicle-field" id="vehicle-trim" type="text" placeholder="SE (optional)">
-        </div>
-        <div class="vehicle-field-wrap" style="flex:0 0 120px">
-          <div class="vfield-label">Mileage</div>
-          <input class="vehicle-field" id="vehicle-mileage" type="number" placeholder="45000" inputmode="numeric">
-        </div>
-      </div>
-    </div>
   </div>
 
   <div class="intake-hint">Snap a part · Identify instantly · Add vehicle info · Tap ✨ to analyze</div>
@@ -877,5 +888,36 @@
 <script src="pipeline.js"></script>
 <script src="intake.js"></script>
 <script src="app.js"></script>
+
+<!-- Aloha from Pearl City! — vehicle summary wire-up, no new files needed -->
+<script>
+(function() {
+  var body    = document.getElementById('vehicle-form-body')
+  var summary = document.getElementById('vehicle-summary')
+  if (!body || !summary) return
+
+  function refreshSummary() {
+    var year  = (document.getElementById('vehicle-year')?.value  || '').trim()
+    var make  = (document.getElementById('vehicle-make')?.value  || '').trim()
+    var model = (document.getElementById('vehicle-model')?.value || '').trim()
+    var trim  = (document.getElementById('vehicle-trim')?.value  || '').trim()
+    var parts = [year, make, model, trim].filter(Boolean)
+    summary.textContent = parts.length ? parts.join(' ') : '—'
+  }
+
+  ;['vehicle-year','vehicle-make','vehicle-model','vehicle-trim'].forEach(function(id) {
+    var el = document.getElementById(id)
+    if (el) el.addEventListener('input', refreshSummary)
+  })
+
+  // Mirror collapse state → show/hide summary line
+  new MutationObserver(function() {
+    var collapsed = body.style.maxHeight === '0px'
+    summary.style.display = collapsed ? 'block' : 'none'
+  }).observe(body, { attributes: true, attributeFilter: ['style'] })
+
+  refreshSummary()
+})()
+</script>
 </body>
 </html>
