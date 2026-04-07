@@ -167,6 +167,11 @@ const autoIntake = (() => {
     // Show analyze button
     _syncAnalyzeBtn()
     autoState.photos = getPhotos()
+
+    // Auto-identify the part from the captured photo
+    if (typeof partIdentifier !== 'undefined') {
+      partIdentifier.identify(dataUrl)
+    }
   }
 
   function clearPhoto(slotIndex) {

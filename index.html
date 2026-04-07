@@ -107,16 +107,20 @@
 
     /* ── Photo zones ── */
     .photo-zones-wrap {
-      width: 100%; display: flex; gap: 13px; padding: 18px 18px 12px;
+      width: 100%; display: flex; flex-direction: column; gap: 10px; padding: 16px 18px 10px;
     }
     .photo-zone-outer {
-      flex: 1; aspect-ratio: 1 / 1;
+      width: 100%; aspect-ratio: 4 / 3;
       border-radius: 18px; overflow: hidden; position: relative;
       background: rgba(255,255,255,0.04);
       border: 1.5px dashed rgba(255,255,255,0.18);
       cursor: pointer;
       transition: border-color 0.2s cubic-bezier(0.4,0,0.2,1);
     }
+    /* Slot 0 is the hero — taller aspect */
+    #photo-zone-0 { aspect-ratio: 4 / 3; }
+    /* Slot 1 is secondary — smaller strip */
+    #photo-zone-1 { aspect-ratio: 5 / 2; width: 58%; align-self: flex-end; }
     .photo-zone-outer:active { border-color: var(--gold); }
     .photo-placeholder {
       position: absolute; inset: 0;
@@ -169,6 +173,61 @@
       text-align: center; padding: 0 28px 8px;
       letter-spacing: 0.04em; line-height: 1.6;
     }
+
+    /* ── Parts Identified section ── */
+    #parts-identified-section {
+      display: none; width: 100%;
+      padding: 0 18px 12px;
+    }
+    .parts-id-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .parts-id-title {
+      font-size: 10.5px; font-weight: 800; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--gold);
+    }
+    #parts-clear-link {
+      font-size: 11px; color: rgba(255,184,0,0.45); cursor: pointer;
+      text-decoration: underline; letter-spacing: 0.04em;
+    }
+    .part-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 13px 15px; margin-bottom: 8px;
+      animation: fadeUp 0.28s cubic-bezier(0.4,0,0.2,1) both;
+    }
+    .part-card-name {
+      font-size: 15.5px; font-weight: 700; color: #fff; margin-bottom: 6px;
+    }
+    .part-card-meta {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 7px;
+    }
+    .part-category-badge {
+      background: rgba(74,158,245,0.18); color: var(--steel);
+      border: 1px solid rgba(74,158,245,0.28); border-radius: 50px;
+      padding: 3px 10px; font-size: 10.5px; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .part-confidence {
+      font-size: 12px; color: var(--gold); font-weight: 600;
+    }
+    .part-card-desc {
+      font-size: 12.5px; color: rgba(255,255,255,0.52); line-height: 1.55;
+    }
+    .parts-id-loading {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 13px 15px;
+      font-size: 13px; color: rgba(255,255,255,0.4);
+      letter-spacing: 0.04em;
+    }
+    .parts-spinner {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid rgba(255,184,0,0.2);
+      border-top-color: var(--gold);
+      animation: spin 0.7s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ═══════════════════════════════════
        ANALYZING SCREEN
@@ -501,41 +560,7 @@
 <!-- ════ INTAKE (main) ════ -->
 <div id="intake" class="screen">
 
-  <!-- Vehicle form — collapsible -->
-  <div class="vehicle-form-wrap">
-    <div class="vehicle-form-header" id="vehicle-form-header">
-      <div class="vehicle-form-title">Vehicle Info</div>
-      <div id="vehicle-chevron">▾</div>
-    </div>
-    <div id="vehicle-form-body">
-      <div class="vehicle-row">
-        <div class="vehicle-field-wrap" style="flex:0 0 78px">
-          <div class="vfield-label">Year</div>
-          <input class="vehicle-field" id="vehicle-year" type="number" placeholder="2019" min="1990" max="2030" inputmode="numeric">
-        </div>
-        <div class="vehicle-field-wrap">
-          <div class="vfield-label">Make</div>
-          <input class="vehicle-field" id="vehicle-make" type="text" placeholder="Toyota">
-        </div>
-        <div class="vehicle-field-wrap">
-          <div class="vfield-label">Model</div>
-          <input class="vehicle-field" id="vehicle-model" type="text" placeholder="Camry">
-        </div>
-      </div>
-      <div class="vehicle-row">
-        <div class="vehicle-field-wrap">
-          <div class="vfield-label">Trim</div>
-          <input class="vehicle-field" id="vehicle-trim" type="text" placeholder="SE (optional)">
-        </div>
-        <div class="vehicle-field-wrap" style="flex:0 0 120px">
-          <div class="vfield-label">Mileage</div>
-          <input class="vehicle-field" id="vehicle-mileage" type="number" placeholder="45000" inputmode="numeric">
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Photo zones — 2 slots -->
+  <!-- Photo zones — slot 0 is the Part Identifier hero -->
   <div class="photo-zones-wrap">
 
     <!-- Slot 0 -->
@@ -581,7 +606,50 @@
   <input type="file" id="photo-file-1" accept="image/*" capture="environment" style="display:none"
     onchange="autoIntake.onFileChange(event, 1)">
 
-  <div class="intake-hint">Add 1–2 damage photos · Enter vehicle year, make &amp; model · Tap ✨ to analyze</div>
+  <!-- Parts Identified — auto-shown after photo capture -->
+  <div id="parts-identified-section">
+    <div class="parts-id-header">
+      <div class="parts-id-title">Parts Identified</div>
+      <span id="parts-clear-link" onclick="partIdentifier.clearAll()">Clear all</span>
+    </div>
+    <div id="parts-identified-list"></div>
+  </div>
+
+  <!-- Vehicle form — collapsible, below camera -->
+  <div class="vehicle-form-wrap">
+    <div class="vehicle-form-header" id="vehicle-form-header">
+      <div class="vehicle-form-title">Vehicle Info</div>
+      <div id="vehicle-chevron" style="transform:rotate(0deg)">▾</div>
+    </div>
+    <div id="vehicle-form-body" style="max-height:0px;overflow:hidden;">
+      <div class="vehicle-row">
+        <div class="vehicle-field-wrap" style="flex:0 0 78px">
+          <div class="vfield-label">Year</div>
+          <input class="vehicle-field" id="vehicle-year" type="number" placeholder="2019" min="1990" max="2030" inputmode="numeric">
+        </div>
+        <div class="vehicle-field-wrap">
+          <div class="vfield-label">Make</div>
+          <input class="vehicle-field" id="vehicle-make" type="text" placeholder="Toyota">
+        </div>
+        <div class="vehicle-field-wrap">
+          <div class="vfield-label">Model</div>
+          <input class="vehicle-field" id="vehicle-model" type="text" placeholder="Camry">
+        </div>
+      </div>
+      <div class="vehicle-row">
+        <div class="vehicle-field-wrap">
+          <div class="vfield-label">Trim</div>
+          <input class="vehicle-field" id="vehicle-trim" type="text" placeholder="SE (optional)">
+        </div>
+        <div class="vehicle-field-wrap" style="flex:0 0 120px">
+          <div class="vfield-label">Mileage</div>
+          <input class="vehicle-field" id="vehicle-mileage" type="number" placeholder="45000" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="intake-hint">Snap a part · Identify instantly · Add vehicle info · Tap ✨ to analyze</div>
 
   <!-- Floating icons -->
   <div class="float-icon"      id="float-camera"   data-key="float-camera">📷</div>
@@ -797,6 +865,7 @@
   }
 </script>
 <script src="api-client.js"></script>
+<script src="partIdentifier.js"></script>
 <script src="prompts/visionPrompt.js"></script>
 <script src="prompts/partsMapPrompt.js"></script>
 <script src="prompts/pricingPrompt.js"></script>
