@@ -25,6 +25,7 @@ const autoApp = (() => {
       document.getElementById('intake').classList.add('active')
       _initFloatIcons()
       autoIntake.initForm()
+      _mascotLoadWave()   // Phase 3: body sway + optional first-launch greeting
     }, 2200)
   }
 
@@ -301,6 +302,104 @@ const autoApp = (() => {
     for (let i = 0; i < 2; i++) autoIntake.clearPhoto(i)
   }
 
+  // ── Float icon bob — JS RAF sine wave (Phase 2) ──────────────
+  // #ASSUMPTION: RAF loop is paused per-icon during drag via _bobPaused flag
+  function _initFloatBob() {
+    const small = window.innerWidth < 360
+    const bobTargets = [
+      { id: 'float-camera',  phase: 0   },
+      { id: 'float-upload',  phase: 0.3 },
+      { id: 'float-history', phase: 0.6 },
+    ]
+    const refs = bobTargets.map(b => ({ el: document.getElementById(b.id), phase: b.phase }))
+    let t0 = null
+
+    function tick(ts) {
+      if (!t0) t0 = ts
+      const t = (ts - t0) / 1000
+      refs.forEach(({ el, phase }) => {
+        if (!el || el._bobPaused) return
+        const y = 4 * Math.sin((t + phase * 2) * Math.PI)
+        const s = small ? 0.8 : 1
+        el.style.transform = `translateY(${y.toFixed(2)}px) scale(${s})`
+      })
+      requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }
+
+  // ── Mascot idle loop (Phase 2) ────────────────────────────────
+  // Wrench twirl every 5s using elastic-out; wink fires 200ms into twirl
+  function _elasticOut(t) {
+    if (t <= 0) return 0
+    if (t >= 1) return 1
+    return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * (2 * Math.PI) / 3) + 1
+  }
+
+  function _tweenWrench(fromAngle, toAngle, durationMs) {
+    const grp = document.getElementById('mascot-wrench')
+    if (!grp) return
+    const t0 = performance.now()
+    function frame(ts) {
+      const p = Math.min(1, (ts - t0) / durationMs)
+      const angle = fromAngle + (toAngle - fromAngle) * _elasticOut(p)
+      grp.setAttribute('transform', `rotate(${angle.toFixed(2)} 76 72)`)
+      if (p < 1) requestAnimationFrame(frame)
+    }
+    requestAnimationFrame(frame)
+  }
+
+  function _wink() {
+    const overlay = document.getElementById('mascot-wink')
+    if (!overlay) return
+    const t0 = performance.now()
+    const fadeMs = 160
+    function frame(ts) {
+      const elapsed = ts - t0
+      let opacity
+      if (elapsed < fadeMs) {
+        opacity = elapsed / fadeMs
+      } else if (elapsed < fadeMs + 80) {
+        opacity = 1
+      } else {
+        opacity = Math.max(0, 1 - (elapsed - fadeMs - 80) / fadeMs)
+      }
+      overlay.setAttribute('opacity', opacity.toFixed(3))
+      if (elapsed < fadeMs * 2 + 80) requestAnimationFrame(frame)
+    }
+    requestAnimationFrame(frame)
+  }
+
+  function _initMascotIdle() {
+    // Initial twirl on load after 1.5s
+    setTimeout(() => { _tweenWrench(30, 84, 800); setTimeout(_wink, 200) }, 1500)
+    // Repeat every 5s
+    setInterval(() => { _tweenWrench(30, 84, 800); setTimeout(_wink, 200) }, 5000)
+  }
+
+  // ── Mascot load wave + first-launch greeting (Phase 3) ───────
+  // #ASSUMPTION: localStorage key 'autoiq_greeted' absent on first install
+  function _mascotLoadWave() {
+    const widget = document.getElementById('mascot-widget')
+    if (widget) {
+      widget.classList.add('mascot-wave')
+      setTimeout(() => widget.classList.remove('mascot-wave'), 720)
+    }
+
+    if (!localStorage.getItem('autoiq_greeted')) {
+      localStorage.setItem('autoiq_greeted', '1')
+      const bubble = document.getElementById('mascot-bubble')
+      if (!bubble) return
+      bubble.textContent = "Aloha! Fix 'em car? \uD83E\uDD19"
+      bubble.classList.add('show')
+      // Fade out after 4s, then restore default text
+      setTimeout(() => {
+        bubble.classList.remove('show')
+        setTimeout(() => { bubble.textContent = 'Ask AutoIQ! \uD83D\uDD27' }, 240)
+      }, 4000)
+    }
+  }
+
   // ── Float icon drag system ────────────────────────────────────
   const _defaultPos = {
     'float-camera':   { right: 22, bottom: 200 },
@@ -317,7 +416,25 @@ const autoApp = (() => {
       const pos   = saved || _defaultPos[key] || { right: 22, bottom: 130 }
       _applyPos(el, pos)
       _makeDraggable(el, key)
+      _addLongPressGlow(el)   // Phase 3: glow ring after 500ms hold
     })
+    _initFloatBob()     // Phase 2: JS-driven sine bob
+    _initMascotIdle()   // Phase 2: wrench twirl + wink loop
+  }
+
+  // ── Long-press glow (Phase 3) ─────────────────────────────────
+  // 500ms hold → tinted ring flash for 320ms, then auto-removes
+  // #ASSUMPTION: pointerdown/move/up sufficient — touch events handled by makeDraggable
+  function _addLongPressGlow(el) {
+    let glowTimer = null
+    function triggerGlow() {
+      el.classList.add('glow')
+      setTimeout(() => el.classList.remove('glow'), 320)
+    }
+    el.addEventListener('pointerdown',   () => { glowTimer = setTimeout(triggerGlow, 500) }, { passive: true })
+    el.addEventListener('pointermove',   () => { if (glowTimer) { clearTimeout(glowTimer); glowTimer = null } })
+    el.addEventListener('pointerup',     () => { if (glowTimer) { clearTimeout(glowTimer); glowTimer = null } })
+    el.addEventListener('pointercancel', () => { if (glowTimer) { clearTimeout(glowTimer); glowTimer = null } })
   }
 
   function _applyPos(el, pos) {
@@ -334,6 +451,8 @@ const autoApp = (() => {
       const r = el.getBoundingClientRect()
       sx = cx; sy = cy; ex = r.left; ey = r.top
       dragging = true; moved = false
+      el._bobPaused = true          // pause bob sine loop during drag
+      el.style.transform = ''
       el.style.transition = 'none'
       el.style.right = ''; el.style.bottom = ''
       el.style.left = ex + 'px'; el.style.top = ey + 'px'
@@ -352,6 +471,7 @@ const autoApp = (() => {
     function end() {
       if (!dragging) return
       dragging = false
+      el._bobPaused = false          // resume bob sine loop
       el.style.transition = ''
       if (moved) _savePos(key, { left: parseInt(el.style.left), top: parseInt(el.style.top) })
     }
@@ -466,6 +586,16 @@ function _escHist(s) {
 }
 // Alias used in sheet render — _esc available globally for other files
 function _esc(s) { return _escHist(s) }
+
+// ── Mascot (Phase 1) ─────────────────────────────────────────
+let _mascotTimer = null
+function mascotTap() {
+  const bubble = document.getElementById('mascot-bubble')
+  if (!bubble) return
+  if (_mascotTimer) clearTimeout(_mascotTimer)
+  bubble.classList.add('show')
+  _mascotTimer = setTimeout(() => bubble.classList.remove('show'), 3000)
+}
 
 // ── Init ─────────────────────────────────────────────────────
 if (document.readyState === 'loading') {
