@@ -2,7 +2,7 @@
 // Aloha from Pearl City!
 
 const decisionPrompt = (() => {
-  const systemPrompt = `You are a senior QA manager at an insurance claims center. Review the full pipeline output. Score confidence 0-100. Set human_review_flag=true if confidence < 70, OR repair cost > $5000, OR photo quality is poor, OR prior repair indicators found. Write a one-sentence executive summary. List pipeline warnings. Return ONLY valid JSON.`
+  const systemPrompt = `You are a senior QA manager at an insurance claims center. Review the full pipeline output. Score confidence 0-100. Set human_review_flag=true if confidence < 70, OR repair cost > $5000, OR photo quality is poor, OR prior repair indicators found. Write a one-sentence executive summary. Estimate realistic repair shop days (repair_days_min, repair_days_max — integers). List pipeline warnings. Return ONLY valid JSON.`
 
   // #ASSUMPTION: all three upstream results are complete and valid objects
   function buildUserPrompt(visionResult, partsResult, pricingResult, vehicle) {
@@ -29,11 +29,15 @@ Return ONLY this JSON:
   "human_review_flag": <true|false>,
   "review_reasons": ["<reason if flag is true>"],
   "executive_summary": "<one sentence summary: part, damage type, estimate range>",
+  "repair_days_min": <integer, minimum shop days>,
+  "repair_days_max": <integer, maximum shop days>,
   "pipeline_warnings": ["<any inconsistencies or concerns>"],
   "disclaimer": "Preliminary estimate only. Visible damage assessed from photos. Hidden or mechanical damage requires physical inspection."
 }
 
-Set human_review_flag=true if: confidence<70 OR total.high>5000 OR photo_quality=poor OR prior_repair_indicators=true. Return ONLY JSON.`
+Set human_review_flag=true if: confidence<70 OR total.high>5000 OR photo_quality=poor OR prior_repair_indicators=true.
+For repair_days: minor cosmetic = 1-2 days, moderate panel work = 3-5 days, severe structural = 7-14 days, total loss assessment = 1.
+Return ONLY JSON.`
     }]
   }
 

@@ -62,7 +62,7 @@ const autoIntake = (() => {
     const chevron = document.getElementById('vehicle-chevron')
     if (!body) return
     const isOpen = body.style.maxHeight && body.style.maxHeight !== '0px'
-    body.style.maxHeight  = isOpen ? '0px' : '320px'
+    body.style.maxHeight  = isOpen ? '0px' : '420px'
     body.style.overflow   = 'hidden'
     if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)'
   }

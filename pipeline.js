@@ -32,6 +32,8 @@ const autoPipeline = (() => {
       human_review_flag: false,
       review_reasons:    [],
       executive_summary: 'Likely moderate fender replacement with door refinish; estimate range $900–$1,260.',
+      repair_days_min:   3,
+      repair_days_max:   5,
       pipeline_warnings: [],
       disclaimer:        'Preliminary estimate only. Visible damage assessed from photos. Hidden or mechanical damage requires physical inspection.',
     },

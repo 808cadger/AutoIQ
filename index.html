@@ -117,6 +117,40 @@
     .vehicle-field::placeholder { color: rgba(255,255,255,0.25); }
     .vehicle-field:focus { border-color: var(--gold); }
 
+    /* ── VIN row ── */
+    .vin-row {
+      display: flex; gap: 8px; margin-bottom: 9px; align-items: flex-end;
+    }
+    .vin-field-wrap { flex: 1; min-width: 0; }
+    #btn-vin-decode {
+      flex: 0 0 68px; height: 40px; border-radius: 10px; border: none;
+      background: linear-gradient(135deg, #FFB800, #FF9A00);
+      color: #080808; font-size: 12px; font-weight: 800;
+      letter-spacing: 0.04em; cursor: pointer;
+      transition: opacity 0.18s; white-space: nowrap;
+    }
+    #btn-vin-decode:disabled { opacity: 0.5; cursor: default; }
+    .vin-hint {
+      font-size: 10px; color: rgba(255,255,255,0.22);
+      letter-spacing: 0.05em; margin-bottom: 10px; padding: 0 2px;
+    }
+
+    /* ── Repair timeline badge ── */
+    .timeline-row {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(74,158,245,0.1);
+      border: 1px solid rgba(74,158,245,0.22);
+      border-radius: 12px; padding: 10px 14px; margin: 8px 0 4px;
+    }
+    .timeline-icon { font-size: 20px; }
+    .timeline-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: rgba(74,158,245,0.7); margin-bottom: 2px;
+    }
+    .timeline-value {
+      font-size: 15px; font-weight: 800; color: #fff;
+    }
+
     /* ── Photo zones ── */
     .photo-zones-wrap {
       width: 100%; display: flex; flex-direction: column; gap: 10px; padding: 16px 18px 10px;
@@ -149,6 +183,31 @@
       position: absolute; top: 9px; left: 11px;
       font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
       color: rgba(255,255,255,0.28); text-transform: uppercase; pointer-events: none;
+    }
+    /* Per-slot accent colors */
+    #photo-zone-0 {
+      border: 2px solid #ffaa3e;
+      background: rgba(255,140,30,0.13);
+    }
+    #photo-zone-0:active { background: rgba(255,140,30,0.22); }
+    #photo-zone-1 {
+      border: 2px solid #38c8f5;
+      background: rgba(38,180,240,0.12);
+    }
+    #photo-zone-1:active { background: rgba(38,180,240,0.22); }
+    .photo-zone-banner {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 7px 12px 8px;
+      font-size: 12px; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; pointer-events: none;
+    }
+    #photo-zone-0 .photo-zone-banner {
+      background: rgba(200,100,0,0.72);
+      color: #ffe0a0;
+    }
+    #photo-zone-1 .photo-zone-banner {
+      background: rgba(0,100,160,0.72);
+      color: #a8ecff;
     }
     .photo-preview {
       width: 100%; height: 100%; object-fit: cover;
@@ -188,8 +247,20 @@
 
     /* ── Parts Identified section ── */
     #parts-identified-section {
-      display: none; width: 100%;
+      display: block; width: 100%;
       padding: 0 18px 12px;
+    }
+    #parts-id-empty {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 7px; padding: 20px 0 14px;
+      border: 1.5px dashed rgba(56,200,245,0.3);
+      border-radius: 14px;
+      background: rgba(38,180,240,0.06);
+    }
+    #parts-id-empty-icon { font-size: 28px; opacity: 0.55; }
+    #parts-id-empty-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: rgba(80,210,245,0.5);
     }
     .parts-id-header {
       display: flex; align-items: center; justify-content: space-between;
@@ -652,7 +723,7 @@
       <div id="vehicle-summary"></div>
       <div id="vehicle-chevron" style="transform:rotate(180deg)">▾</div>
     </div>
-    <div id="vehicle-form-body" style="max-height:320px;overflow:hidden;">
+    <div id="vehicle-form-body" style="max-height:420px;overflow:hidden;">
       <div class="vehicle-row">
         <div class="vehicle-field-wrap" style="flex:0 0 78px">
           <div class="vfield-label">Year</div>
@@ -677,6 +748,16 @@
           <input class="vehicle-field" id="vehicle-mileage" type="number" placeholder="45000" inputmode="numeric">
         </div>
       </div>
+      <!-- VIN auto-fill — decodes via NHTSA, no key needed -->
+      <div class="vin-row">
+        <div class="vin-field-wrap">
+          <div class="vfield-label">VIN (optional — auto-fills above)</div>
+          <input class="vehicle-field" id="vehicle-vin" type="text" placeholder="1HGBH41JXMN109186"
+            maxlength="17" autocomplete="off" spellcheck="false" style="letter-spacing:0.06em;font-family:monospace">
+        </div>
+        <button id="btn-vin-decode" onclick="vinScanner.scanAndFill()">Decode</button>
+      </div>
+      <div class="vin-hint">Scan your VIN sticker → paste here → tap Decode to auto-fill year/make/model</div>
     </div>
   </div>
 
@@ -685,10 +766,10 @@
 
     <!-- Slot 0 -->
     <div class="photo-zone-outer" id="photo-zone-0" onclick="autoIntake.tapPhotoZone(0)">
-      <div class="photo-slot-num">Photo 1</div>
+      <div class="photo-slot-num">Damage Photos</div>
       <div class="photo-placeholder" id="photo-placeholder-0">
-        <div class="photo-placeholder-icon">📷</div>
-        <div class="photo-placeholder-label">Tap to add</div>
+        <div class="photo-placeholder-icon">🔍</div>
+        <div class="photo-placeholder-label">Tap to capture</div>
       </div>
       <video class="photo-video" id="photo-video-0" autoplay playsinline muted></video>
       <canvas id="photo-canvas-0" style="display:none"></canvas>
@@ -699,14 +780,15 @@
         onclick="event.stopPropagation(); autoIntake.stopCamera(0)">✕</button>
       <button class="photo-clear-btn" id="photo-clear-0"
         onclick="event.stopPropagation(); autoIntake.clearPhoto(0)">← Retake</button>
+      <div class="photo-zone-banner">Damage Assessment</div>
     </div>
 
     <!-- Slot 1 -->
     <div class="photo-zone-outer" id="photo-zone-1" onclick="autoIntake.tapPhotoZone(1)">
-      <div class="photo-slot-num">Photo 2</div>
+      <div class="photo-slot-num">Slot 2</div>
       <div class="photo-placeholder" id="photo-placeholder-1">
-        <div class="photo-placeholder-icon">📷</div>
-        <div class="photo-placeholder-label">Optional</div>
+        <div class="photo-placeholder-icon">🔧</div>
+        <div class="photo-placeholder-label">Tap to capture</div>
       </div>
       <video class="photo-video" id="photo-video-1" autoplay playsinline muted></video>
       <canvas id="photo-canvas-1" style="display:none"></canvas>
@@ -717,6 +799,7 @@
         onclick="event.stopPropagation(); autoIntake.stopCamera(1)">✕</button>
       <button class="photo-clear-btn" id="photo-clear-1"
         onclick="event.stopPropagation(); autoIntake.clearPhoto(1)">← Retake</button>
+      <div class="photo-zone-banner">Part Identifier</div>
     </div>
   </div>
 
@@ -726,13 +809,18 @@
   <input type="file" id="photo-file-1" accept="image/*" capture="environment" style="display:none"
     onchange="autoIntake.onFileChange(event, 1)">
 
-  <!-- Parts Identified — auto-shown after photo capture -->
+  <!-- Part Identifier — always visible -->
   <div id="parts-identified-section">
     <div class="parts-id-header">
-      <div class="parts-id-title">Parts Identified</div>
+      <div class="parts-id-title">🔧 Part Identifier</div>
       <span id="parts-clear-link" onclick="partIdentifier.clearAll()">Clear all</span>
     </div>
-    <div id="parts-identified-list"></div>
+    <div id="parts-identified-list">
+      <div id="parts-id-empty">
+        <div id="parts-id-empty-icon">🔩</div>
+        <div id="parts-id-empty-label">Snap the Part Identifier photo to identify</div>
+      </div>
+    </div>
   </div>
 
   <div class="intake-hint">Snap a part · Identify instantly · Add vehicle info · Tap ✨ to analyze</div>
@@ -894,6 +982,15 @@
       <div class="severity-badge sev-unknown" id="results-severity">—</div>
     </div>
 
+    <!-- Repair timeline -->
+    <div class="timeline-row" id="results-timeline-row" style="display:none">
+      <div class="timeline-icon">🗓</div>
+      <div>
+        <div class="timeline-label">Est. Repair Time</div>
+        <div class="timeline-value" id="results-timeline-val">—</div>
+      </div>
+    </div>
+
     <!-- Executive summary -->
     <div id="results-summary" class="result-summary"></div>
 
@@ -958,7 +1055,7 @@
     <!-- Action buttons -->
     <div class="result-actions">
       <button class="btn-gold"          onclick="autoApp.saveEstimate()">Save ✓</button>
-      <button class="btn-outline-steel" onclick="autoApp.exportEstimate()">Export JSON</button>
+      <button class="btn-outline-steel" onclick="autoApp.exportEstimate()">Export Report</button>
     </div>
     <div style="margin-top:10px">
       <button class="btn-ghost" onclick="autoApp.newEstimate(); closeAllSheets()">New Estimate</button>
@@ -1007,6 +1104,7 @@
   }
 </script>
 <script src="api-client.js"></script>
+<script src="vinScanner.js"></script>
 <script src="partIdentifier.js"></script>
 <script src="prompts/visionPrompt.js"></script>
 <script src="prompts/partsMapPrompt.js"></script>

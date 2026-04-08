@@ -44,6 +44,7 @@ const partIdentifier = (() => {
     const section = document.getElementById('parts-identified-section')
     const list    = document.getElementById('parts-identified-list')
     if (!section || !list) return
+    document.getElementById('parts-id-empty')?.remove()
 
     // Unknown part — show minimal card
     const isUnknown = !result.part_name || result.part_name === 'Unknown' || result.confidence_pct === 0
@@ -147,10 +148,13 @@ const partIdentifier = (() => {
   // ── Clear ─────────────────────────────────────────────
 
   function clearAll() {
-    const section = document.getElementById('parts-identified-section')
-    const list    = document.getElementById('parts-identified-list')
-    if (list)    list.innerHTML = ''
-    if (section) section.style.display = 'none'
+    const list = document.getElementById('parts-identified-list')
+    if (!list) return
+    list.innerHTML = `
+      <div id="parts-id-empty">
+        <div id="parts-id-empty-icon">🔩</div>
+        <div id="parts-id-empty-label">Snap the Part Identifier photo to identify</div>
+      </div>`
   }
 
   return { identify, clearAll }
